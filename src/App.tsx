@@ -5,6 +5,7 @@ import RootLayout from "./_root/RootLayout";
 import { Routes, Route } from "react-router-dom";
 import { Home } from "./_root/pages";
 import "./index.css";
+import { Toaster } from "@/components/ui/toaster";
 
 const App = () => {
   return (
@@ -21,6 +22,7 @@ const App = () => {
           <Route index element={<Home />} />
         </Route>
       </Routes>
+      <Toaster />
     </main>
   );
 };
