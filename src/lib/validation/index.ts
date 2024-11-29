@@ -10,4 +10,10 @@ export const SigninValidation = z.object({
     email : z.string().email() ,
     password : z.string()
 })
+export const PostValidation = z.object({
+    caption : z.string().min(5).max(2200),
+    file : z.custom<File[]>(),
+    location : z.string().min(2).max(2200),
+    tags : z.string()
+})
   
