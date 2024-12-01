@@ -1,4 +1,4 @@
-import { INewPost, INewUser } from "@/types";
+import { INewPost, INewUser, IUpdatePost } from "@/types";
 import { ID, ImageGravity, Query } from "appwrite";
 import { account, appwriteConfig, avatars, databases, storage } from "./config";
 
@@ -178,6 +178,151 @@ export const deleteFile = async (fileId : string) => {
     return {
       status : "ok"
     };
+  } catch (error) {
+    console.log(error)
+  }
+}
+
+export const getRecentPosts = async () => {
+  const posts = await databases.listDocuments(
+    appwriteConfig.databaseId,
+    appwriteConfig.postCollectionid,
+    [Query.orderDesc('$createdAt'),Query.limit(20)]
+  )
+
+  if(!posts) throw new Error("No posts")
+
+  return posts;
+}
+
+export const likePost = async (postId:string , likesArray : string[]) => {
+  try {
+    const updatedPost = await databases.updateDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.postCollectionid,
+      postId,
+      {
+        likes : likesArray
+      }
+    )
+
+    if(!updatedPost) throw new Error("Error in liking Post")
+      
+    return updatedPost;
+  } catch (error) {
+    console.log(error)
+  }
+}
+
+export const savePost = async (postId:string , userId: string) => {
+  try {
+    const updatedPost = await databases.createDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.savesCollectionid,
+      ID.unique(),
+      {
+        user : userId,
+        post : postId
+      }
+    )
+
+    if(!updatedPost) throw new Error("Error in Updating Post")
+
+    return updatedPost;
+  } catch (error) {
+    console.log(error)
+  }
+}
+
+export const deleteSavedPost = async (savedRecordId: string) => {
+  try {
+    const statusCode = await databases.deleteDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.savesCollectionid,
+      savedRecordId
+    )
+
+    if(!statusCode) throw new Error("Error in Deleting Saved Post")
+
+    return {status : 'ok'};
+  } catch (error) {
+    console.log(error)
+  }
+}
+
+export const getPostById = async (postId : string) => {
+  try {
+    const post = await databases.getDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.postCollectionid,
+      postId
+    )
+
+    return post;
+  } catch (error) {
+    console.log(error)
+  }
+}
+
+export const updatePost = async (post : IUpdatePost) => {
+  const hasFileToUpdate = post.file.length > 0;
+  try { 
+    let image = {
+      imageUrl: post.imageUrl,
+      imageId: post.imageId
+    }
+
+    if(hasFileToUpdate){
+      const uploadedFile = await uploadFile(post.file[0])
+    if(!uploadedFile) throw Error;
+
+    const fileUrl = await getFilePreview(uploadedFile.$id)
+    if(!fileUrl) {
+      deleteFile(uploadedFile.$id);
+      throw Error
+    };
+
+    image = {...image, imageUrl: new URL(fileUrl), imageId: uploadedFile.$id }
+    }
+    
+    const tags = post.tags?.replace(/ /g,'').split(',') || [];
+
+    // Ready to store post in Database
+
+    const updatedPost = await databases.updateDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.postCollectionid,
+      post.postId,
+      {
+        caption: post.caption,
+        imageUrl: image.imageUrl,
+        imageId: image.imageId,
+        location: post.location,
+        tags: tags
+      }
+    )
+    if(!updatedPost){
+      await deleteFile(post.imageId)
+      throw Error
+    }
+
+    return updatedPost;
+  } catch (error) {
+    console.log(error)
+  }
+}
+
+export const deletePost = async (postId: string, imageId: string) => {
+  try {
+    if(!postId || !imageId) throw Error;
+  
+    await databases.deleteDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.postCollectionid,
+      postId
+    )
+  
+    return {status: "ok"}
   } catch (error) {
     console.log(error)
   }
