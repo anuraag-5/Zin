@@ -2,6 +2,7 @@ import { INewPost, INewUser, IUpdatePost } from "@/types";
 import { ID, ImageGravity, Query } from "appwrite";
 import { account, appwriteConfig, avatars, databases, storage } from "./config";
 import { PostsResponse } from "../react-query/queriesAndMutation";
+import { Post } from "../react-query/queriesAndMutation";
 export const createUserAccount = async (user: INewUser) => {
   try {
     const newAccount = await account.create(
@@ -361,20 +362,31 @@ export const getInfinitePost = async ({
   }
 
   try {
-    const posts = await databases.listDocuments(
+    // Fetch data from Appwrite
+    const response = await databases.listDocuments(
       appwriteConfig.databaseId,
       appwriteConfig.postCollectionid,
       queries
     );
 
-    if (!posts) {
+    if (!response || !response.documents) {
       throw new Error("No posts found");
     }
 
-    return posts; // Ensure `posts` matches `PostsResponse`
+    // Transform documents into the Post type
+    const transformedPosts: Post[] = response.documents.map((doc) => ({
+      ...doc,
+      imageUrl: doc.imageUrl, // Ensure these fields are part of your schema
+      creator: doc.creator, // Ensure `creator` includes `name` and `imageUrl`
+    }));
+
+    return {
+      documents: transformedPosts,
+      total: response.total,
+    };
   } catch (error) {
     console.error(error);
-    throw new Error("Failed to fetch posts"); // Explicitly throw errors
+    throw new Error("Failed to fetch posts");
   }
 };
 

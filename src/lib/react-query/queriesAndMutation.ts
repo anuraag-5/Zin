@@ -24,14 +24,20 @@ import {
 } from "../appwrite/api";
 import { INewPost, INewUser, IUpdatePost } from "@/types";
 import { QUERY_KEYS } from "./queryKeys";
+import { Models } from "appwrite";
 
-export interface Post {
-  $id: string;
-  // Add other fields that a post contains
-}
+export type Post = Models.Document & {
+  imageUrl: string;
+  creator: {
+    name: string;
+    imageUrl: string;
+  };
+  // Add any other custom fields your Post might have.
+};
 
 export interface PostsResponse{
   documents: Post[];
+  total:number,
 }
 
 export const useCreateUserAccountMutation = () => {
