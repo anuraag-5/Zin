@@ -1,17 +1,23 @@
+import { useNavigate } from "react-router-dom";
 import Loader from "@/components/shared/Loader";
 import { useUserContext } from "@/context/AuthContext";
-import { useGetPostByIdMutation } from "@/lib/react-query/queriesAndMutation";
+import { useDeletePostMutation, useGetPostByIdMutation } from "@/lib/react-query/queriesAndMutation";
 import { formatDate } from "@/lib/utils";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import PostStats from "@/components/shared/PostStats";
 
 const PostDetails = () => {
+  const navigate = useNavigate()
+  const { mutate: deletePost} = useDeletePostMutation()
   const { id } = useParams();
   const { data: post, isPending } = useGetPostByIdMutation(id || "");
   const { user } = useUserContext();
 
-  const handleDeletePost = () => {};
+  const handleDeletePost = () => {
+    deletePost({ postId: id, imageId: post?.imageId });
+    navigate("/");
+  };
 
   return (
     <div className="post_details-container">
