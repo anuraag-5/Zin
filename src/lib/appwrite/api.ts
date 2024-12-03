@@ -1,7 +1,7 @@
 import { INewPost, INewUser, IUpdatePost } from "@/types";
 import { ID, ImageGravity, Query } from "appwrite";
 import { account, appwriteConfig, avatars, databases, storage } from "./config";
-
+import { PostsResponse } from "../react-query/queriesAndMutation";
 export const createUserAccount = async (user: INewUser) => {
   try {
     const newAccount = await account.create(
@@ -330,22 +330,51 @@ export const deletePost = async (postId: string, imageId: string) => {
   }
 };
 
-export const getInfinitePost = async ({ pageParam }: { pageParam: number }) => {
+// export const getInfinitePost = async ({ pageParam }: { pageParam?: string | unknown }) => {
+//   const queries: any[] = [Query.orderDesc("$updatedAt"), Query.limit(9)];
+
+//   if (pageParam) {
+//     queries.push(Query.cursorAfter(pageParam.toString()));
+//   }
+//   try {
+//     const posts = await databases.listDocuments(
+//       appwriteConfig.databaseId,
+//       appwriteConfig.postCollectionid,
+//       queries
+//     )
+//     if(!posts) throw Error;
+//     return posts;
+//   } catch (error) {
+//     console.log(error);
+//   }
+// };
+
+export const getInfinitePost = async ({
+  pageParam,
+}: {
+  pageParam?: string | unknown;
+}): Promise<PostsResponse> => {
   const queries: any[] = [Query.orderDesc("$updatedAt"), Query.limit(10)];
 
   if (pageParam) {
     queries.push(Query.cursorAfter(pageParam.toString()));
   }
+
   try {
     const posts = await databases.listDocuments(
       appwriteConfig.databaseId,
       appwriteConfig.postCollectionid,
       queries
-    )
-    if(!posts) throw Error;
-    return posts;
+    );
+
+    if (!posts) {
+      throw new Error("No posts found");
+    }
+
+    return posts; // Ensure `posts` matches `PostsResponse`
   } catch (error) {
-    console.log(error);
+    console.error(error);
+    throw new Error("Failed to fetch posts"); // Explicitly throw errors
   }
 };
 

@@ -25,6 +25,15 @@ import {
 import { INewPost, INewUser, IUpdatePost } from "@/types";
 import { QUERY_KEYS } from "./queryKeys";
 
+export interface Post {
+  $id: string;
+  // Add other fields that a post contains
+}
+
+export interface PostsResponse{
+  documents: Post[];
+}
+
 export const useCreateUserAccountMutation = () => {
   return useMutation({
     mutationFn: (user: INewUser) => createUserAccount(user),
@@ -174,16 +183,19 @@ export const useDeletePostMutation = () => {
 };
 
 export const useGetPosts = () => {
-  return useInfiniteQuery({
-    queryKey: [QUERY_KEYS.GET_INFINITE_POSTS],
-    queryFn: getInfinitePost,
+  return useInfiniteQuery<PostsResponse, Error>({
+    queryKey: [QUERY_KEYS.GET_INFINITE_POSTS], // Query key
+    queryFn: ({ pageParam = undefined }) => getInfinitePost({ pageParam }), // Fetch posts
     getNextPageParam: (lastPage) => {
-      if(lastPage && lastPage.documents.length === 0) return null;
-      const lastId = lastPage?.documents[lastPage?.documents.length - 1].$id;
-      return lastId;
-    }
-  })
-}
+      if (!lastPage || lastPage.documents.length === 0) {
+        return undefined; // No more pages
+      }
+      // Return the `$id` of the last document for pagination
+      return lastPage.documents[lastPage.documents.length - 1].$id;
+    },
+    initialPageParam: undefined, // Start with no cursor
+  });
+};
 
 export const useSearchPosts = (serachTerm: string) => {
   return useQuery({
